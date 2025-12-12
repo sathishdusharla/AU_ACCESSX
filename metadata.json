@@ -1,0 +1,7 @@
+{
+  "name": "Copy of AU AccessX",
+  "description": "A blockchain-based attendance verification system using NFT badges, featuring Student, Admin, and Validator portals.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
