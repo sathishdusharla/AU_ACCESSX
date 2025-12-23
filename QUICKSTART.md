@@ -1,6 +1,17 @@
 # 🚀 Quick Start Guide - AU AccessX
 
-**Get your attendance system running in 5 minutes!**
+**Get your blockchain attendance system running in 10 minutes!**
+
+## Features You'll Get
+
+✅ Admin portal with instructor authentication  
+✅ Time-based QR codes (10-minute validity)  
+✅ Photo verification for students  
+✅ PDF attendance reports  
+✅ Real-time session updates  
+✅ NFT attendance badges  
+
+---
 
 ## What You Need to Do in Supabase
 

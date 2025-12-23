@@ -1,7 +1,77 @@
 {
-  "name": "Copy of AU AccessX",
-  "description": "A blockchain-based attendance verification system using NFT badges, featuring Student, Admin, and Validator portals.",
+  "name": "AU AccessX - Blockchain Attendance System",
+  "version": "2.0.0",
+  "description": "A complete blockchain-based attendance verification system with time-based QR validation, photo verification, PDF reports, and real-time updates. Features Student, Admin, Verify, Home, and Help portals with MetaMask authentication, NFT badges, and comprehensive documentation.",
+  "author": "AU AccessX Development Team",
+  "features": [
+    "Time-based QR code validation (10-minute windows)",
+    "Photo verification for attendance",
+    "PDF report generation (student & instructor)",
+    "Context-aware navigation system",
+    "Real-time session updates via Supabase",
+    "MetaMask wallet authentication",
+    "SHA-256 password hashing",
+    "NFT attendance badges",
+    "Instructor authentication portal",
+    "Student attendance history",
+    "Mobile-responsive design",
+    "Comprehensive help system"
+  ],
+  "technologies": [
+    "React 18.2",
+    "TypeScript 5.3",
+    "Supabase PostgreSQL",
+    "Ethers.js 6.7",
+    "Vite 5.0",
+    "Tailwind CSS",
+    "jsPDF",
+    "React Router 6",
+    "MetaMask Integration"
+  ],
+  "portals": {
+    "home": {
+      "route": "/",
+      "description": "Landing page with role selection cards",
+      "features": ["Role selection", "Feature highlights", "Statistics", "Responsive design"]
+    },
+    "admin": {
+      "route": "/admin",
+      "description": "Instructor dashboard for session management",
+      "features": ["Session creation", "QR generation", "Attendance management", "PDF reports", "Photo viewing", "Real-time updates"]
+    },
+    "student": {
+      "route": "/student",
+      "description": "Student portal for marking attendance",
+      "features": ["QR scanning", "Photo capture", "Time validation", "MetaMask signing", "NFT badges"]
+    },
+    "verify": {
+      "route": "/validator",
+      "description": "Student attendance history viewer",
+      "features": ["Attendance history", "Photo display", "PDF download", "Token IDs", "Transaction hashes"]
+    },
+    "help": {
+      "route": "/help",
+      "description": "Comprehensive FAQ and troubleshooting",
+      "features": ["Portal FAQs", "Troubleshooting guides", "Quick links", "Support contact"]
+    }
+  },
+  "database": {
+    "tables": ["instructors", "sessions", "attendance_records"],
+    "columns_added": ["student_image", "start_time", "end_time", "instructor_wallet"],
+    "migrations": ["INSTRUCTOR_SETUP.sql", "ADD_START_TIME_COLUMN.sql"]
+  },
   "requestFramePermissions": [
     "camera"
-  ]
+  ],
+  "browserRequirements": {
+    "chrome": ">=90",
+    "firefox": ">=88",
+    "safari": ">=14",
+    "edge": ">=90"
+  },
+  "deployment": {
+    "platforms": ["Netlify", "Vercel", "GitHub Pages"],
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist"
+  }
 }

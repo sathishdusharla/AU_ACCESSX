@@ -11,6 +11,9 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Type checking
+npm run lint
 ```
 
 ## Environment Setup
@@ -21,135 +24,172 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJxxxxxxxxxxx
 ```
 
-## Supabase - Quick SQL Setup
+## Database Setup - Run These SQL Files in Order
 
-Copy this entire block and run in Supabase SQL Editor:
+### 1. INSTRUCTOR_SETUP.sql
+Creates instructors table, adds student_image column, inserts demo instructor:
+- Wallet: `0xbe10291cb3df442736bfda6c78dfbf4519b6eac6`
+- Email: `23eg105a16@anurag.edu.in`
+- Password: `@Sathish240605`
 
+### 2. ADD_START_TIME_COLUMN.sql
+Adds time-based access control:
 ```sql
--- Create tables
-CREATE TABLE sessions (
-  id BIGSERIAL PRIMARY KEY,
-  session_id TEXT UNIQUE NOT NULL,
-  nonce TEXT NOT NULL,
-  title TEXT NOT NULL,
-  date DATE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE attendance_records (
-  id BIGSERIAL PRIMARY KEY,
-  session_id TEXT NOT NULL,
-  wallet_address TEXT NOT NULL,
-  email TEXT NOT NULL,
-  token_id TEXT NOT NULL,
-  tx_hash TEXT NOT NULL,
-  signature TEXT NOT NULL,
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(session_id, wallet_address)
-);
-
--- Indexes
-CREATE INDEX idx_sessions_session_id ON sessions(session_id);
-CREATE INDEX idx_sessions_created_at ON sessions(created_at DESC);
-CREATE INDEX idx_attendance_session_id ON attendance_records(session_id);
-CREATE INDEX idx_attendance_wallet ON attendance_records(wallet_address);
-
--- Foreign key
-ALTER TABLE attendance_records 
-ADD CONSTRAINT fk_attendance_session 
-FOREIGN KEY (session_id) 
-REFERENCES sessions(session_id) 
-ON DELETE CASCADE;
-
--- RLS
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow public read access on sessions" 
-ON sessions FOR SELECT TO public USING (true);
-
-CREATE POLICY "Allow public insert access on sessions" 
-ON sessions FOR INSERT TO public WITH CHECK (true);
-
-CREATE POLICY "Allow public read access on attendance_records" 
-ON attendance_records FOR SELECT TO public USING (true);
-
-CREATE POLICY "Allow public insert access on attendance_records" 
-ON attendance_records FOR INSERT TO public WITH CHECK (true);
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS start_time TIME;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS end_time TIME;
 ```
 
-## Routes
+## Application Routes
 
-| Route        | Portal    | Purpose                        |
-|--------------|-----------|--------------------------------|
-| `/`          | Redirect  | Goes to `/student`             |
-| `/admin`     | Admin     | Create sessions & QR codes     |
-| `/student`   | Student   | Mark attendance                |
-| `/validator` | Validator | Verify attendance records      |
+| Route        | Portal    | Purpose                           | Navigation Links        |
+|--------------|-----------|-----------------------------------|-------------------------|
+| `/`          | Home      | Landing page with role selection  | Home, Help              |
+| `/admin`     | Admin     | Create sessions, manage records   | Home, Admin, Help       |
+| `/student`   | Student   | Mark attendance via QR            | Home, Student, Help     |
+| `/validator` | Verify    | View attendance history           | Home, Verify, Help      |
+| `/help`      | Help      | FAQ and troubleshooting           | Home, Help              |
+
+## Key Features by Portal
+
+### Home Page
+- Role selection cards (Student/Admin/Verify)
+- Feature highlights with icons
+- Statistics bar
+- Responsive design
+
+### Admin Portal
+- Instructor authentication (wallet + email + password)
+- Session creation with start/end times
+- QR code generation
+- Attendance management with photos
+- PDF report download
+- Real-time session updates
+- Remove students from attendance
+- Delete sessions
+
+### Student Portal
+- MetaMask wallet connection
+- Email input
+- QR code scanning
+- **Time validation** (10-minute window)
+- Photo capture (mandatory)
+- Digital signature
+- NFT badge receipt
+
+### Verify Portal
+- View complete attendance history
+- Student photo display
+- PDF report download
+- Token ID and transaction hash display
+
+### Help Page
+- Student Portal FAQ
+- Admin Portal FAQ
+- Verify Portal FAQ
+- Troubleshooting guides
+- Portal quick links
 
 ## Testing Flow
 
-1. **Admin**: Create session → Get QR code
-2. **Student**: Connect wallet → Scan QR → Sign → Minted!
-3. **Validator**: Enter IDs → Verify record
+1. **Open Home Page**: See role selection cards
+2. **Admin Login**: Use demo credentials above
+3. **Create Session**: Enter title, date, start time (e.g., 09:00), end time (e.g., 10:30)
+4. **QR Display**: Session card shows timing and QR code
+5. **Student Scan**: Within 10 minutes of start time, scan QR
+6. **Photo Capture**: Take photo with camera
+7. **Sign & Submit**: MetaMask signature, receive NFT badge
+8. **View Attendance**: Admin clicks "View Attendance" to see student with photo
+9. **Download PDF**: Both student and admin can download reports
+10. **Verify History**: Student checks verify portal for complete history
+
+## Time-Based Validation
+
+**QR Code Validity:**
+- Valid from: `session_date` at `start_time`
+- Valid until: `start_time + 10 minutes`
+- Example: Session starts 09:00, QR expires at 09:10
+
+**Error Messages:**
+- Before start: "Session has not started yet"
+- After 10 mins: "QR code has expired. Valid for first 10 minutes only."
+
+## Database Schema Quick Reference
+
+### instructors
+- `id` (UUID)
+- `wallet_address` (TEXT, unique)
+- `email` (TEXT)
+- `password_hash` (TEXT, SHA-256)
+- `created_at` (TIMESTAMPTZ)
+
+### sessions
+- `id` (UUID)
+- `session_id` (TEXT, unique, for QR)
+- `nonce` (TEXT)
+- `title` (TEXT)
+- `date` (DATE)
+- `start_time` (TIME) ← NEW
+- `end_time` (TIME) ← NEW
+- `instructor_wallet` (TEXT)
+- `created_at` (TIMESTAMPTZ)
+
+### attendance_records
+- `id` (UUID)
+- `session_id` (TEXT)
+- `wallet_address` (TEXT)
+- `email` (TEXT)
+- `signature` (TEXT)
+- `student_image` (TEXT, base64) ← Photo
+- `token_id` (TEXT)
+- `tx_hash` (TEXT)
+- `timestamp` (TIMESTAMPTZ)
+- UNIQUE(`session_id`, `wallet_address`)
 
 ## Files You Must Edit
 
 1. `.env` - Add your Supabase credentials
 
-## Files You Can Ignore
+## Files You Should NOT Edit
 
-1. `server.js` - No longer used (old backend)
-2. `.env.example` - Just a template
+- `node_modules/` (auto-generated)
+- `dist/` (build output)
+- `.git/` (version control)
 
-## Key Features
+## Common Issues & Solutions
 
-✅ Real-time session updates  
-✅ Instant attendance recording  
-✅ MetaMask signature verification  
-✅ Duplicate prevention  
-✅ No backend server needed
+| Issue | Solution |
+|-------|----------|
+| "MetaMask not found" | Install MetaMask extension |
+| "Invalid credentials" | Check wallet, email, password match |
+| "QR code expired" | Must scan within 10 mins of start time |
+| "Attendance already marked" | Each wallet can only mark once per session |
+| "Camera not working" | Allow camera permissions in browser |
+| Sessions not appearing | Enable real-time on sessions table in Supabase |
+| PDF not downloading | Check browser popup blocker |
 
-## Documentation
+## Deployment Checklist
 
-| File                | What's Inside                  |
-|---------------------|--------------------------------|
-| QUICKSTART.md       | 5-minute setup guide           |
-| SUPABASE_SETUP.md   | Detailed Supabase guide        |
-| ARCHITECTURE.md     | System design & data flows     |
-| SUMMARY.md          | What changed & why             |
-| README.md           | Full project documentation     |
+- [ ] Run `npm run build`
+- [ ] Set environment variables on hosting platform
+- [ ] Deploy `dist/` folder
+- [ ] Test all portals on live URL
+- [ ] Verify MetaMask connections work
+- [ ] Test QR scanning on mobile devices
+- [ ] Check PDF downloads
+- [ ] Verify real-time updates
 
-## Common Issues
+## Security Notes
 
-**"Missing environment variables"**
-→ Create `.env` with Supabase URL & key
+⚠️ **Never commit `.env` file to Git**  
+✅ Password is SHA-256 hashed  
+✅ Signatures cryptographically verified  
+✅ Time-based validation prevents fraud  
+✅ Photos prevent proxy attendance  
+✅ Database constraints prevent duplicates  
 
-**"Database Connection Failed"**
-→ Run SQL commands in Supabase
+## Need Help?
 
-**Real-time not working**
-→ Enable replication for `sessions` table
-
-**MetaMask not connecting**
-→ Install MetaMask browser extension
-
-## Supabase Dashboard Checklist
-
-- [ ] Project created
-- [ ] Tables created (SQL Editor)
-- [ ] Real-time enabled (Database → Replication)
-- [ ] API keys copied (Settings → API)
-
-## Local Setup Checklist
-
-- [ ] `.env` file created
-- [ ] `npm install` completed
-- [ ] `npm run dev` running
-- [ ] Browser opened to localhost
-
-## That's It!
-
-Read [QUICKSTART.md](QUICKSTART.md) for detailed steps.
-
-**Total setup time: ~10 minutes** ⏱️
+1. Check [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) for complete details
+2. Read [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for database issues
+3. Review [ARCHITECTURE.md](ARCHITECTURE.md) for data flows
+4. See Help Page in app for user-facing FAQs

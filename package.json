@@ -1,11 +1,26 @@
 {
   "name": "au-accessx",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Blockchain attendance system with time-based QR validation, photo verification, and real-time updates",
   "private": true,
+  "keywords": [
+    "blockchain",
+    "attendance",
+    "qr-code",
+    "metamask",
+    "supabase",
+    "react",
+    "typescript",
+    "nft",
+    "education"
+  ],
+  "author": "AU AccessX Development Team",
+  "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.87.1",
     "ethers": "^6.7.0",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^3.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-qr-code": "^2.0.12",

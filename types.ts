@@ -3,11 +3,20 @@ export interface Window {
   ethereum?: any;
 }
 
+export interface Instructor {
+  walletAddress: string;
+  email: string;
+  passwordHash?: string;
+}
+
 export interface SessionData {
   sessionId: string;
   nonce: string;
   title: string;
   date: string;
+  start_time?: string;
+  end_time?: string;
+  instructorWallet?: string;
 }
 
 export interface AttendanceRequest {

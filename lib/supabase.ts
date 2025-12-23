@@ -56,12 +56,21 @@ export const supabase: SupabaseClient | null = (() => {
 })();
 
 // Database types for type safety
+export interface Instructor {
+  id?: number;
+  wallet_address: string;
+  email: string;
+  password_hash: string;
+  created_at?: string;
+}
+
 export interface Session {
   id?: number;
   session_id: string;
   nonce: string;
   title: string;
   date: string;
+  instructor_wallet?: string;
   created_at?: string;
 }
 

@@ -22,6 +22,10 @@ const StudentPortal: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ tokenId: string; txHash: string } | null>(null);
   const [error, setError] = useState<string>('');
+  const [capturedImage, setCapturedImage] = useState<string>('');
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const connectWallet = async () => {
     if (window.ethereum) {
@@ -42,6 +46,7 @@ const StudentPortal: React.FC = () => {
       const parsed = JSON.parse(decodedText);
       if (parsed.sessionId && parsed.nonce) {
         setScanData(parsed);
+        setShowCamera(true);
       } else {
         setError("Invalid QR Code format.");
       }
@@ -49,6 +54,53 @@ const StudentPortal: React.FC = () => {
       setError("Failed to parse QR code.");
     }
   };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setError('Failed to access camera. Please allow camera permissions.');
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        setCapturedImage(imageData);
+        setShowCamera(false);
+        // Stop camera
+        const stream = video.srcObject as MediaStream;
+        stream?.getTracks().forEach(track => track.stop());
+      }
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage('');
+    setShowCamera(true);
+  };
+
+  React.useEffect(() => {
+    if (showCamera) {
+      startCamera();
+    }
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream?.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [showCamera]);
 
   const signAndSubmit = async () => {
     if (!walletAddress || !scanData || !email) {
@@ -72,7 +124,22 @@ const StudentPortal: React.FC = () => {
         throw new Error("Invalid Session ID or QR Code");
       }
 
-      // 2. Check if already attended
+      // 2. Validate session time (10 minute window from start time)
+      if (sessionData.start_time) {
+        const sessionDateTime = new Date(`${sessionData.date}T${sessionData.start_time}`);
+        const currentTime = new Date();
+        const timeDifference = (currentTime.getTime() - sessionDateTime.getTime()) / (1000 * 60); // in minutes
+
+        if (timeDifference < 0) {
+          throw new Error("Session has not started yet. Please wait until the session start time.");
+        }
+
+        if (timeDifference > 10) {
+          throw new Error("QR code has expired. Attendance window was only 10 minutes from session start time.");
+        }
+      }
+
+      // 3. Check if already attended
       const { data: existingRecord } = await supabase
         .from('attendance_records')
         .select('*')
@@ -84,7 +151,7 @@ const StudentPortal: React.FC = () => {
         throw new Error("Attendance already marked for this wallet.");
       }
 
-      // 3. Create Message & Sign
+      // 4. Create Message & Sign
       const message = `Attendance Request\nEmail: ${email}\nSession: ${scanData.sessionId}\nNonce: ${scanData.nonce}`;
       
       const signature = await window.ethereum.request({
@@ -92,7 +159,7 @@ const StudentPortal: React.FC = () => {
         params: [message, walletAddress],
       });
 
-      // 4. Verify signature
+      // 5. Verify signature
       const recoveredAddress = ethers.verifyMessage(message, signature);
       if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
         throw new Error("Signature verification failed. Wallet mismatch.");
@@ -113,6 +180,7 @@ const StudentPortal: React.FC = () => {
             token_id: tokenId,
             tx_hash: txHash,
             signature: signature,
+            student_image: capturedImage,
           }
         ])
         .select()
@@ -276,15 +344,65 @@ const StudentPortal: React.FC = () => {
                          <p className="text-xs text-slate-500 font-mono">ID: {scanData.sessionId.substring(0,8)}...</p>
                        </div>
                     </div>
-                    <button onClick={() => setScanData(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-red-500 hover:bg-red-50 transition shadow-sm">
+                    <button onClick={() => { setScanData(null); setCapturedImage(''); setShowCamera(false); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-red-500 hover:bg-red-50 transition shadow-sm">
                       <i className="fas fa-times"></i>
                     </button>
                   </div>
                 )}
               </div>
 
+              {/* Step 3.5: Capture Photo */}
+              {scanData && (
+                <div className="transition-all duration-500">
+                  <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center">
+                      <i className="fas fa-camera text-blue-600 mr-2"></i> Capture Your Photo
+                  </h3>
+                  
+                  {!capturedImage ? (
+                    showCamera ? (
+                      <div className="space-y-3">
+                        <div className="rounded-xl overflow-hidden border-2 border-blue-200 bg-black relative">
+                          <video ref={videoRef} autoPlay playsInline className="w-full" />
+                          <canvas ref={canvasRef} className="hidden" />
+                        </div>
+                        <button
+                          onClick={capturePhoto}
+                          className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                        >
+                          <i className="fas fa-camera"></i> Capture Photo
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowCamera(true)}
+                        className="w-full py-4 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/50 text-blue-700 font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2"
+                      >
+                        <i className="fas fa-camera"></i> Open Camera
+                      </button>
+                    )
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="rounded-xl overflow-hidden border-2 border-green-200">
+                        <img src={capturedImage} alt="Captured" className="w-full" />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={retakePhoto}
+                          className="flex-1 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition flex items-center justify-center gap-2"
+                        >
+                          <i className="fas fa-redo"></i> Retake
+                        </button>
+                        <div className="flex-1 py-2 rounded-lg bg-green-50 text-green-700 font-semibold flex items-center justify-center gap-2 border border-green-200">
+                          <i className="fas fa-check-circle"></i> Photo Ready
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Step 4: Action */}
-              <div className={`pt-4 ${!scanData ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className={`pt-4 ${!scanData || !capturedImage ? 'opacity-50 pointer-events-none' : ''}`}>
                  <button
                    onClick={signAndSubmit}
                    disabled={loading}

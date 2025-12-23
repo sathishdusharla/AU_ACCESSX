@@ -1,7 +1,27 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom'
 
 const Navbar: React.FC = () => {
+  const location = useLocation()
+  const currentPath = location.pathname
+
+  // Determine which links to show based on current portal
+  const getVisibleLinks = () => {
+    if (currentPath === '/') {
+      return ['home', 'help']
+    } else if (currentPath === '/student') {
+      return ['home', 'student', 'help']
+    } else if (currentPath === '/admin') {
+      return ['home', 'admin', 'help']
+    } else if (currentPath === '/validator') {
+      return ['home', 'validator', 'help']
+    } else if (currentPath === '/help') {
+      return ['home', 'help']
+    }
+    return ['home', 'student', 'admin', 'validator', 'help']
+  }
+
+  const visibleLinks = getVisibleLinks()
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
     `relative px-5 py-2.5 rounded-xl md:rounded-full font-bold text-sm md:text-base transition-all duration-500 ease-out flex items-center gap-2 overflow-hidden group ${
       isActive
@@ -27,18 +47,36 @@ const Navbar: React.FC = () => {
           
           {/* Nav Links */}
           <div className="flex items-center p-1.5 bg-slate-100/60 rounded-xl md:rounded-full border border-slate-200/60 shadow-inner w-full md:w-auto justify-center md:justify-end">
-            <NavLink to="/student" className={getLinkClass}>
-              <i className="fas fa-user-graduate text-xs"></i>
-              <span>Student</span>
-            </NavLink>
-            <NavLink to="/admin" className={getLinkClass}>
-              <i className="fas fa-chalkboard-teacher text-xs"></i>
-              <span>Admin</span>
-            </NavLink>
-            <NavLink to="/validator" className={getLinkClass}>
-              <i className="fas fa-certificate text-xs"></i>
-              <span>Verify</span>
-            </NavLink>
+            {visibleLinks.includes('home') && (
+              <NavLink to="/" className={getLinkClass}>
+                <i className="fas fa-home text-xs"></i>
+                <span>Home</span>
+              </NavLink>
+            )}
+            {visibleLinks.includes('student') && (
+              <NavLink to="/student" className={getLinkClass}>
+                <i className="fas fa-user-graduate text-xs"></i>
+                <span>Student</span>
+              </NavLink>
+            )}
+            {visibleLinks.includes('admin') && (
+              <NavLink to="/admin" className={getLinkClass}>
+                <i className="fas fa-chalkboard-teacher text-xs"></i>
+                <span>Admin</span>
+              </NavLink>
+            )}
+            {visibleLinks.includes('validator') && (
+              <NavLink to="/validator" className={getLinkClass}>
+                <i className="fas fa-certificate text-xs"></i>
+                <span>Verify</span>
+              </NavLink>
+            )}
+            {visibleLinks.includes('help') && (
+              <NavLink to="/help" className={getLinkClass}>
+                <i className="fas fa-question-circle text-xs"></i>
+                <span>Help</span>
+              </NavLink>
+            )}
           </div>
         </div>
       </div>

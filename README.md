@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**A modern, secure attendance tracking system using QR codes, MetaMask signatures, and Supabase real-time database.**
+**A modern, secure attendance tracking system using QR codes, MetaMask signatures, photo verification, and Supabase real-time database with time-based access control.**
 
-[Features](#features) • [Quick Start](#quick-start) • [Setup](#setup) • [Architecture](#architecture) • [Documentation](#documentation)
+[Features](#features) • [Quick Start](#quick-start) • [Setup](#setup) • [Documentation](#documentation) • [Architecture](#architecture)
 
 </div>
 
@@ -12,47 +12,80 @@
 
 ## 🎯 Features
 
-- **Admin Portal**: Create attendance sessions and generate unique QR codes
-- **Student Portal**: Scan QR codes and mark attendance using MetaMask signatures
-- **Validator Portal**: Verify attendance records on-chain
+### Core Portals
+- **Home Page**: Beautiful landing page with role selection cards and feature highlights
+- **Admin Portal**: Create time-based sessions, generate QR codes, manage attendance, download PDF reports
+- **Student Portal**: Scan QR codes, capture photo verification, mark attendance with MetaMask signatures
+- **Verify Portal**: View complete attendance history, download personal attendance reports
+- **Help Page**: Comprehensive FAQ and troubleshooting guide for all portals
+
+### Advanced Features
+- **Time-Based Access Control**: QR codes valid only within 10-minute window from session start time
+- **Photo Verification**: Mandatory photo capture prevents proxy attendance
+- **PDF Reports**: Downloadable attendance reports for both students and instructors
+- **Context-Aware Navigation**: Dynamic navbar showing only relevant portal links
 - **Real-time Updates**: Sessions appear instantly using Supabase real-time subscriptions
-- **Cryptographic Security**: Uses Ethereum signatures for proof of attendance
-- **Beautiful UI**: Modern glass-morphism design with smooth animations
+- **Cryptographic Security**: Ethereum signatures for tamper-proof proof of attendance
+- **NFT Badges**: Students receive verifiable digital attendance certificates
+- **Session Duration Display**: Shows complete timing (start-end) on session cards
+- **Duplicate Prevention**: Database-level constraints prevent multiple attendance submissions
+- **Beautiful UI**: Modern glass-morphism design with smooth animations and responsive layout
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 16+ installed
-- MetaMask browser extension (for students)
-- Supabase account (free tier works fine)
+- **Node.js 18+** installed
+- **MetaMask** browser extension (for wallet authentication)
+- **Supabase** account (free tier works perfectly)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
 
-1. **Clone and Install**
+1. **Clone and Install Dependencies**
    ```bash
-   cd au-accessx
+   cd "copy-of-au-accessx (1)"
    npm install
    ```
 
-2. **Configure Supabase**
+2. **Configure Supabase Database**
    
-   Follow the detailed setup guide: [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+   **Option A - Quick Setup (5 minutes):** Follow [QUICKSTART.md](QUICKSTART.md)
    
-   Quick version:
+   **Option B - Detailed Setup:** Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+   
+   Essential steps:
    - Create a Supabase project at https://supabase.com
-   - Copy `.env.example` to `.env`
-   - Add your Supabase URL and anon key to `.env`
-   - Run the SQL commands from the setup guide to create tables
+   - Run SQL scripts:
+     - [INSTRUCTOR_SETUP.sql](INSTRUCTOR_SETUP.sql) - Creates tables and demo instructor
+     - [ADD_START_TIME_COLUMN.sql](ADD_START_TIME_COLUMN.sql) - Adds time-based access control
+   - Enable real-time for `sessions` table
+   - Copy your Supabase URL and anon key
 
-3. **Run the App**
+3. **Configure Environment Variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your credentials:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+
+4. **Start Development Server**
    ```bash
    npm run dev
    ```
 
-4. **Open in Browser**
+5. **Open in Browser**
    
    Navigate to `http://localhost:5173`
+   
+   **Demo Instructor Credentials:**
+   - Wallet: `0xbe10291cb3df442736bfda6c78dfbf4519b6eac6`
+   - Email: `23eg105a16@anurag.edu.in`
+   - Password: `@Sathish240605`
 
 ## 📖 Setup
 

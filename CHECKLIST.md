@@ -4,7 +4,7 @@ Print this page and check off items as you complete them!
 
 ---
 
-## Phase 1: Supabase Setup (10 minutes)
+## Phase 1: Supabase Setup (15 minutes)
 
 ### Create Account & Project
 
@@ -17,15 +17,26 @@ Print this page and check off items as you complete them!
 - [ ] Click "Create new project"
 - [ ] Wait 1-2 minutes for provisioning
 
-### Create Database Tables
+### Create Database Tables & Instructor Account
 
 - [ ] Click "SQL Editor" in left sidebar
 - [ ] Click "New Query"
-- [ ] Open `QUICKSTART.md` in this project
-- [ ] Copy the entire SQL block from section 2
+- [ ] Open `INSTRUCTOR_SETUP.sql` in this project
+- [ ] Copy the entire SQL script
 - [ ] Paste into Supabase SQL Editor
 - [ ] Click "Run" button
-- [ ] Verify: "Success. No rows returned" message appears
+- [ ] Verify: Table showing instructor record appears
+- [ ] Note: This creates `instructors` table and demo account
+
+### Add Time-Based Access Control
+
+- [ ] Click "New Query" again
+- [ ] Open `ADD_START_TIME_COLUMN.sql` in this project
+- [ ] Copy the SQL script
+- [ ] Paste into Supabase SQL Editor
+- [ ] Click "Run" button
+- [ ] Verify: "Success. No rows returned" message
+- [ ] Note: This adds `start_time` and `end_time` columns
 
 ### Enable Real-time
 
