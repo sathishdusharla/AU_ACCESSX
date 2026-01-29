@@ -17,6 +17,8 @@ export interface SessionData {
   start_time?: string;
   end_time?: string;
   instructorWallet?: string;
+  instructor_latitude?: number;
+  instructor_longitude?: number;
 }
 
 export interface AttendanceRequest {

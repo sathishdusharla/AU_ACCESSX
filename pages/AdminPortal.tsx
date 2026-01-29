@@ -4,6 +4,7 @@ import { SessionData } from '../types';
 import { supabase } from '../lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import jsPDF from 'jspdf';
+import { getCurrentLocation } from '../lib/locationUtils';
 
 declare global {
   interface Window {
@@ -482,6 +483,25 @@ const AdminPortal: React.FC = () => {
     }
 
     try {
+      // Capture instructor location
+      let instructorLat: number | undefined;
+      let instructorLon: number | undefined;
+      
+      try {
+        const location = await getCurrentLocation();
+        instructorLat = location.latitude;
+        instructorLon = location.longitude;
+        console.log('Instructor location captured:', { instructorLat, instructorLon });
+      } catch (locationError: any) {
+        console.warn('Location capture failed:', locationError.message);
+        showAlert('Location Warning', 
+          'Could not capture your location. Students will not be able to mark attendance for this session. Please enable location services.', 
+          'error'
+        );
+        setLoading(false);
+        return;
+      }
+
       const sessionId = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       const nonce = (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`).substring(0, 16);
 
@@ -496,6 +516,8 @@ const AdminPortal: React.FC = () => {
             start_time: startTime,
             end_time: endTime,
             instructor_wallet: walletAddress.toLowerCase(),
+            instructor_latitude: instructorLat,
+            instructor_longitude: instructorLon,
           }
         ])
         .select()
@@ -506,6 +528,7 @@ const AdminPortal: React.FC = () => {
       setTitle('');
       setStartTime('');
       setEndTime('');
+      showAlert('Session Created', 'Session created successfully with location tracking enabled.', 'success');
     } catch (err) {
       console.error(err);
       setFetchError(true);

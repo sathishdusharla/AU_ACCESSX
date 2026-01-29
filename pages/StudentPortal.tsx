@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import QRScanner from '../components/QRScanner';
 import { supabase } from '../lib/supabase';
 import { ethers } from 'ethers';
+import { getCurrentLocation, isWithinProximity, formatDistance } from '../lib/locationUtils';
 
 // Augment window with ethereum provider
 declare global {
@@ -139,7 +140,41 @@ const StudentPortal: React.FC = () => {
         }
       }
 
-      // 3. Check if already attended
+      // 3. Get student location and validate proximity
+      let studentLat: number;
+      let studentLon: number;
+
+      try {
+        const studentLocation = await getCurrentLocation();
+        studentLat = studentLocation.latitude;
+        studentLon = studentLocation.longitude;
+      } catch (locationError: any) {
+        throw new Error(`Location required: ${locationError.message}`);
+      }
+
+      // 4. Verify instructor location is available
+      if (!sessionData.instructor_latitude || !sessionData.instructor_longitude) {
+        throw new Error("Session does not have location tracking enabled. Please contact your instructor.");
+      }
+
+      // 5. Check proximity (100 meters radius)
+      const proximityCheck = isWithinProximity(
+        studentLat,
+        studentLon,
+        sessionData.instructor_latitude,
+        sessionData.instructor_longitude,
+        100 // 100 meters
+      );
+
+      if (!proximityCheck.isValid) {
+        throw new Error(
+          `You are too far from the instructor's location. Distance: ${formatDistance(proximityCheck.distance)}. You must be within 100m to mark attendance.`
+        );
+      }
+
+      console.log(`Proximity verified: ${formatDistance(proximityCheck.distance)} from instructor`);
+
+      // 6. Check if already attended
       const { data: existingRecord } = await supabase
         .from('attendance_records')
         .select('*')
@@ -151,7 +186,7 @@ const StudentPortal: React.FC = () => {
         throw new Error("Attendance already marked for this wallet.");
       }
 
-      // 4. Create Message & Sign
+      // 7. Create Message & Sign
       const message = `Attendance Request\nEmail: ${email}\nSession: ${scanData.sessionId}\nNonce: ${scanData.nonce}`;
       
       const signature = await window.ethereum.request({
@@ -159,17 +194,17 @@ const StudentPortal: React.FC = () => {
         params: [message, walletAddress],
       });
 
-      // 5. Verify signature
+      // 8. Verify signature
       const recoveredAddress = ethers.verifyMessage(message, signature);
       if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
         throw new Error("Signature verification failed. Wallet mismatch.");
       }
 
-      // 5. "Mint" the NFT (Generate token data)
+      // 9. "Mint" the NFT (Generate token data)
       const tokenId = Math.floor(100000 + Math.random() * 900000).toString();
       const txHash = "0x" + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
-      // 6. Insert into Supabase - this will be instant!
+      // 10. Insert into Supabase with location data
       const { data, error } = await supabase
         .from('attendance_records')
         .insert([
@@ -181,6 +216,8 @@ const StudentPortal: React.FC = () => {
             tx_hash: txHash,
             signature: signature,
             student_image: capturedImage,
+            student_latitude: studentLat,
+            student_longitude: studentLon,
           }
         ])
         .select()
@@ -188,7 +225,7 @@ const StudentPortal: React.FC = () => {
 
       if (error) throw error;
 
-      // 7. Success
+      // 11. Success
       setSuccessData({
         tokenId: tokenId,
         txHash: txHash
